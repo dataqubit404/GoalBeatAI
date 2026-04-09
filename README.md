@@ -1,129 +1,79 @@
-# ⚽ GoalBeat AI — Smart Football Intelligence Platform
+# GoalBeat AI ⚽️
 
-## 🚀 Overview
-**GoalBeat AI** is a full-stack football analytics platform that provides real-time data, league insights, and AI-powered predictions across global football competitions.
+> **Intelligence for the Beautiful Game.** Every Goal. Every Stat. Flat Data.
 
-Users can explore leagues, tournaments, clubs, and players with detailed statistics, live updates, and intelligent match predictions — all in one place.
+GoalBeat AI is a premium, high-performance football data and tactical analysis platform. It combines beautiful, glassmorphic UI design with deep data visualization to provide fans and analysts with unmatched insights into leagues, clubs, and tactical formations.
 
----
+## 🌟 Key Features
 
-## 🌍 Features
-
-### 🔎 League & Tournament Search
-- Search and explore global football leagues and tournaments
-- Filter by country, tier, or competition type
-
-### 📜 League Overview
-- Founded year
-- Format (round-robin, knockout, etc.)
-- Number of teams
-- Promotion & relegation rules
-
-### 📊 Live Points Table
-- Real-time standings
-- Points, goal difference, wins/losses
-- Auto-updated after matches
-
-### ⚽ Top Scorers & Player Stats
-- Goals, assists, minutes played
-- Player performance tracking
-- Form analysis
-
-### 🏟 Club Dashboard
-- Squad details
-- Recent form (last 5 matches)
-- Attack vs defense stats
-- Home vs away performance
-
-### 🔴 Live Match Data
-- Live scores
-- Match statistics (possession, shots, xG)
-- Timeline (goals, cards, substitutions)
-
-### 🤖 AI Prediction Engine (Core Feature)
-- Match outcome prediction
-- Scoreline probability
-- Player performance insights  
-
-Example:
-> Team A has a 63% chance of winning based on recent form and historical data.
-
-### 📈 Advanced Analytics
-- Expected Goals (xG)
-- Team performance trends
-- Momentum graphs
-
-### 👤 User Features
-- Favorite leagues and clubs
-- Personalized dashboard
-- Match notifications
-
----
-
-## 🏆 Coverage
-
-### 🌐 International Competitions
-- FIFA World Cup
-- UEFA Champions League
-
-### ⚽ Top 20 Football Leagues
-- Multi-league real-time coverage
-- Scalable architecture for global data
-
----
-
-## 🧠 AI Implementation
-
-### Beginner
-- Logistic Regression (win/loss prediction)
-
-### Intermediate
-- Random Forest / XGBoost
-
-### Advanced
-- LSTM / Deep Learning for time-series predictions
-
----
+* **Match Intelligence & Predictions**: AI-fueled statistical predictions for upcoming fixtures (Win/Draw/Loss probabilities).
+* **Tactical Squad Builder**: A fully interactive drag-and-drop pitch to build, analyze, and compare starting XIs and formations using `@dnd-kit/core`.
+* **League Explorer**: Comprehensive dashboards for top global leagues, featuring dynamic standings, top scorers, and fixture tracking.
+* **Side-by-Side Comparison**: Select multiple leagues and contrast them using synchronized charts and data tables.
+* **Fallback API Architecture**: A robust offline-first fallback system ensuring the app remains fully functional with high-fidelity mock data even when API rate limits are hit.
+* **Premium Dark UI**: Built with custom Tailwind tokens, massive typography overlays (`font-matchday`), mesh gradients, and framer-motion micro-animations.
 
 ## 🛠 Tech Stack
 
-### Frontend
-- React.js / Next.js  
-- Tailwind CSS  
-- Chart.js / Recharts  
+**Frontend Architecture:**
+* **Framework**: React 18 & Vite
+* **Routing**: React Router DOM (v6)
+* **Styling**: Tailwind CSS (Custom Dark/Glassmorphism theme) 
+* **Animations**: Framer Motion
+* **Drag & Drop**: @dnd-kit/core (Used in Squad Builder)
+* **Charts**: Recharts
 
-### Backend
-- Node.js  
-- Express.js  
-
-### Database
-- MongoDB / PostgreSQL  
-
-### APIs
-- Football Data APIs (RapidAPI / Sportmonks / Football-Data)
-
-### Optional
-- Redis (for caching real-time data)
+**Backend Architecture:**
+* **Runtime**: Node.js
+* **Framework**: Express.js
+* **Data Provider**: API-Football
 
 ---
 
-## 🔥 Unique Selling Points
+## 🚀 Getting Started
 
-- Real-time multi-league coverage  
-- AI-powered match predictions  
-- Advanced football analytics  
-- Scalable backend architecture  
-- Clean and modern UI  
+### Prerequisites
+* Node.js (v18+ recommended)
+* API-Football Key (Add to `.env` or run using fallback mock data mode)
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone <your-repo-url>
+   cd goalbeat--ai
+   ```
+
+2. **Setup the Backend:**
+   ```bash
+   cd backend
+   npm install
+   # Copy environment variables
+   cp .env.example .env 
+   npm start
+   ```
+
+3. **Setup the Frontend:**
+   ```bash
+   # Open a new terminal tab
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+4. **View the Application:**
+   Open your browser and navigate to `http://localhost:5173`.
 
 ---
 
-## 📦 Future Enhancements
+## 🎨 Asset Configuration
 
-- 📱 Mobile application  
-- 🎯 Fantasy football assistant  
-- 🧠 Personalized AI recommendations  
-- 🔔 Smart notifications  
-- 🎙 Voice assistant integration  
-- 📊 League comparison analytics  
+GoalBeat uses a modular asset approach. You can easily swap core imagery by replacing files in the `public` directory:
+* **Auth Background**: Place your custom background at `frontend/public/images/auth/background.jpg`
+* **Story/Hero Screens**: Replace `frontend/public/images/story/story1.jpg`
 
----
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
+
+## 📄 License
+This project is proprietary and confidential. © 2026 GoalBeat AI. All Rights Reserved.
