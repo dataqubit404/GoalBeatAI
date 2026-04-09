@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ─────────────────────────────────────────────────── */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-pitch-950 text-white font-body;
+    background-color: #050505;
+    background-image: 
+      radial-gradient(circle at 50% -20%, #171717 0%, transparent 80%),
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 80px 80px, 80px 80px;
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-white text-pitch-950;
+  }
+}
+
+/* ── Components ───────────────────────────────────────────── */
+@layer components {
+  /* Flat clean card */
+  .glass {
+    @apply bg-pitch-900 border border-white/[0.08] rounded-2xl;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+  }
+  .glass-hover {
+    @apply glass transition-all duration-300 hover:border-white/20 hover:bg-pitch-800;
+  }
+
+  /* Shimmer */
+  .skeleton {
+    @apply bg-pitch-800 animate-pulse rounded-2xl;
+  }
+
+  /* Form badge */
+  .form-w { @apply bg-white text-pitch-950 text-[10px] font-matchday px-2 py-0.5; }
+  .form-d { @apply bg-chalk-400 text-pitch-950 text-[10px] font-matchday px-2 py-0.5; }
+  .form-l { @apply bg-pitch-700 text-white text-[10px] font-matchday px-2 py-0.5; }
+
+  /* Pill badge */
+  .badge { @apply inline-flex items-center gap-1 px-3 py-1 text-[10px] font-matchday uppercase tracking-widest border border-white/10 rounded-full; }
+  .badge-green { @apply badge bg-grass-500 text-pitch-950 border-none; }
+  .badge-white { @apply badge bg-white text-pitch-950 border-none; }
+
+  /* Nav link */
+  .nav-link {
+    @apply text-chalk-400 hover:text-white text-xs font-matchday uppercase tracking-widest transition-all duration-200;
+  }
+  .nav-link.active {
+    @apply text-white border-b-2 border-white;
+  }
+
+  /* Section title */
+  .section-eyebrow {
+    @apply font-matchday text-grass-500 text-sm tracking-[0.3em] uppercase mb-4;
+  }
+  .section-title {
+    @apply font-matchday text-6xl md:text-8xl text-white uppercase leading-none tracking-tighter;
+  }
+
+  /* Input */
+  .input-field {
+    @apply bg-pitch-900 border border-white/10 rounded-xl px-4 py-3
+           text-white placeholder:text-chalk-600 text-sm focus:outline-none 
+           focus:border-white transition-all duration-200;
+  }
+
+  /* Button */
+  .btn-primary {
+    @apply bg-white text-pitch-950 font-matchday uppercase tracking-widest
+           px-8 py-4 text-sm transition-all duration-200 rounded-xl
+           hover:bg-chalk-200 active:scale-95 flex items-center gap-2;
+  }
+  .btn-ghost {
+    @apply border border-white/20 text-white font-matchday uppercase tracking-widest
+           px-8 py-4 text-sm transition-all duration-200 rounded-xl
+           hover:bg-white hover:text-pitch-950 active:scale-95 flex items-center gap-2;
+  }
+}
+
+/* ── Utilities ────────────────────────────────────────────── */
+@layer utilities {
+  .text-matchday {
+    @apply font-matchday uppercase leading-none tracking-tighter;
+  }
+  
+  .bg-image-mask {
+    @apply relative overflow-hidden;
+    /* No auto-styling of child images — handled per-component */
+  }
+
+  .mask-fade-bottom {
+    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  }
+
+  .mask-fade-left {
+    mask-image: linear-gradient(to left, black 50%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to left, black 50%, transparent 100%);
+  }
+
+  .blend-overlay { mix-blend-mode: overlay; }
+  .blend-soft-light { mix-blend-mode: soft-light; }
+  .blend-multiply { mix-blend-mode: multiply; }
+  .blend-screen { mix-blend-mode: screen; }
+
+  .text-outline {
+    -webkit-text-stroke: 1px rgba(255,255,255,0.2);
+    color: transparent;
+  }
+
+  .glimpse-hover {
+    @apply relative overflow-hidden;
+  }
+  .glimpse-hover::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-500;
+    background: linear-gradient(
+      120deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.05) 45%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.05) 55%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+  }
+  .glimpse-hover:hover::after {
+    @apply opacity-100;
+    transform: translateX(100%);
+    transition: transform 0.6s ease-in-out, opacity 0.5s;
+  }
+}
+
+/* ── Scroll reveal (Intersection Observer driven) ─────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ── Parallax support ─────────────────────────────────────── */
+.parallax-container {
+  overflow: hidden;
+  position: relative;
+}
+.parallax-bg {
+  will-change: transform;
+  position: absolute;
+  inset: -20%;
+}
+
+/* ── Pitch lines background ───────────────────────────────── */
+.pitch-lines {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
