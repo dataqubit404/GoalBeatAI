@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import axios from "axios";
+import { socket } from "../lib/socket";
 
 // API Base URL
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
@@ -100,6 +101,26 @@ export const useStore = create(
       setActiveLeague: (l) => set({ activeLeague: l }),
       activeClub: null,
       setActiveClub: (c) => set({ activeClub: c }),
+
+      // ── Socket Initialization ──────────────────────────────
+      initSockets: () => {
+        if (socket.connected) return;
+        
+        socket.connect();
+        
+        socket.on("connect", () => console.log("📡 Connected to Live Scores"));
+        
+        socket.on("live:scores", (matches) => {
+          // Add notification for important events if user is logged in
+          if (get().token && matches.length > 0) {
+            // Logic to check for goal events in the matches array
+            // For now, just a generic update
+            // get().addNotification({ type: 'goal', message: 'Live updates received!' });
+          }
+        });
+
+        socket.on("disconnect", () => console.log("📡 Disconnected from Live Scores"));
+      },
     }),
     {
       name: "goalbeat-storage",

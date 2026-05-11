@@ -6,6 +6,7 @@ services:
     plan: free
     buildCommand: "cd backend && npm install"
     startCommand: "cd backend && node server.js"
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
@@ -18,7 +19,7 @@ services:
       - key: DB_HOST
         sync: false
       - key: DB_PORT
-        sync: false
+        value: "3306"
       - key: DB_USER
         sync: false
       - key: DB_PASSWORD
@@ -27,6 +28,10 @@ services:
         value: goalbeat_ai
       - key: DB_SSL
         value: "true"
+      - key: DB_SSL_STRICT
+        value: "false"
+      - key: DB_CA_CERT
+        sync: false
       - key: FRONTEND_URL
         sync: false
       - key: JWT_SECRET

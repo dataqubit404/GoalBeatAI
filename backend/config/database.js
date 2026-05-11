@@ -18,8 +18,11 @@ const poolConfig = {
 };
 
 // Enable SSL for Aiven production
-if (isProduction && process.env.DB_SSL === "true") {
-  poolConfig.ssl = { rejectUnauthorized: false };
+if (isProduction || process.env.DB_SSL === "true") {
+  poolConfig.ssl = {
+    rejectUnauthorized: process.env.DB_SSL_STRICT === "true",
+    ca: process.env.DB_CA_CERT ? Buffer.from(process.env.DB_CA_CERT, "base64").toString() : undefined,
+  };
 }
 
 const pool = mysql.createPool(poolConfig);

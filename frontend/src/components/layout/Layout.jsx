@@ -27,16 +27,17 @@ export default function Layout() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { notifications, user, logout, checkAuth, authLoading } = useStore();
+  const { notifications, user, logout, checkAuth, authLoading, initSockets } = useStore();
   const unread = notifications.filter((n) => !n.read).length;
   const { query, setQuery, results, loading } = useSearch();
   const searchRef = useRef(null);
   const userMenuRef = useRef(null);
 
-  // Initial auth check
+  // Initial auth check & socket init
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+    initSockets();
+  }, [checkAuth, initSockets]);
 
   // Close on route change
   useEffect(() => {
