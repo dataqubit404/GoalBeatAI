@@ -18,19 +18,30 @@ const httpServer = createServer(app);
 // Initialize Database
 initializeDatabase();
 
-// CORS Origins
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  "http://localhost:5173",
-  "https://goalbeat-ai.vercel.app" // Placeholder for user's future URL
-].filter(Boolean);
+// Helper to validate allowed origins
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true; // allow non-browser requests (mobile, postman, curl)
+  const configuredFrontend = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, "") : null;
+  const cleanOrigin = origin.replace(/\/$/, "");
+  
+  if (configuredFrontend && cleanOrigin === configuredFrontend) return true;
+  if (cleanOrigin === "http://localhost:5173" || cleanOrigin === "http://localhost:3000") return true;
+  if (cleanOrigin.endsWith(".vercel.app")) return true; // all vercel preview & production deployments
+  return false;
+};
 
 // Socket.IO for live scores
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
   },
   transports: ["websocket", "polling"]
 });
@@ -39,10 +50,10 @@ const io = new Server(httpServer, {
 app.use(helmet({ crossOriginResourcePolicy: false })); // Allow cross-origin images
 app.use(cors({ 
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(null, false);
     }
   },
   credentials: true 

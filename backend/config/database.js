@@ -6,19 +6,41 @@ const mysql = require("mysql2/promise");
 
 const isProduction = process.env.NODE_ENV === "production";
 
-const poolConfig = {
-  host: process.env.DB_HOST || "localhost",
-  port: parseInt(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "goalbeat_ai",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-};
+let poolConfig;
 
-// Enable SSL for Aiven production
-if (isProduction || process.env.DB_SSL === "true") {
+if (process.env.DATABASE_URL || process.env.MYSQL_URL) {
+  try {
+    const parsedUrl = new URL(process.env.DATABASE_URL || process.env.MYSQL_URL);
+    poolConfig = {
+      host: parsedUrl.hostname,
+      port: parseInt(parsedUrl.port) || 3306,
+      user: parsedUrl.username,
+      password: decodeURIComponent(parsedUrl.password),
+      database: parsedUrl.pathname.replace(/^\//, "") || process.env.DB_NAME || "defaultdb",
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+    };
+  } catch (err) {
+    console.error("⚠️ Failed to parse DATABASE_URL, using default pool config:", err.message);
+  }
+}
+
+if (!poolConfig) {
+  poolConfig = {
+    host: process.env.DB_HOST || "localhost",
+    port: parseInt(process.env.DB_PORT) || 3306,
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "defaultdb",
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+  };
+}
+
+// Enable SSL for Aiven production or when specified
+if (isProduction || process.env.DB_SSL === "true" || process.env.DATABASE_URL?.includes("ssl")) {
   poolConfig.ssl = {
     rejectUnauthorized: process.env.DB_SSL_STRICT === "true",
     ca: process.env.DB_CA_CERT ? Buffer.from(process.env.DB_CA_CERT, "base64").toString() : undefined,
@@ -29,10 +51,22 @@ const pool = mysql.createPool(poolConfig);
 
 // ── Initialize DB Schema ────────────────────────────────────
 async function initializeDatabase() {
-  const conn = await pool.getConnection();
+  let conn;
   try {
-    await conn.query(`CREATE DATABASE IF NOT EXISTS goalbeat_ai`);
-    await conn.query(`USE goalbeat_ai`);
+    conn = await pool.getConnection();
+    const targetDb = poolConfig.database || process.env.DB_NAME || "defaultdb";
+    
+    try {
+      await conn.query(`CREATE DATABASE IF NOT EXISTS \`${targetDb}\``);
+    } catch (e) {
+      // Ignored: Cloud providers like Aiven may manage database creation at dashboard level
+    }
+    
+    try {
+      await conn.query(`USE \`${targetDb}\``);
+    } catch (e) {
+      console.warn("⚠️ Could not switch database explicitly:", e.message);
+    }
 
     // Users table
     await conn.query(`
