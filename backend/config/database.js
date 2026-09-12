@@ -1,140 +1,113 @@
 // ============================================================
-// GoalBeat AI — MySQL Database Config
-// Local: mysql2 | Production: Aiven MySQL (same config, SSL)
+// GoalBeat AI — PostgreSQL Database Config
+// Local: PostgreSQL | Production: Render PostgreSQL / Supabase / Neon / Aiven
 // ============================================================
-const mysql = require("mysql2/promise");
+const { Pool } = require("pg");
 
 const isProduction = process.env.NODE_ENV === "production";
 
 let poolConfig;
 
-if (process.env.DATABASE_URL || process.env.MYSQL_URL) {
-  try {
-    const parsedUrl = new URL(process.env.DATABASE_URL || process.env.MYSQL_URL);
-    poolConfig = {
-      host: parsedUrl.hostname,
-      port: parseInt(parsedUrl.port) || 3306,
-      user: parsedUrl.username,
-      password: decodeURIComponent(parsedUrl.password),
-      database: parsedUrl.pathname.replace(/^\//, "") || process.env.DB_NAME || "defaultdb",
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-    };
-  } catch (err) {
-    console.error("⚠️ Failed to parse DATABASE_URL, using default pool config:", err.message);
-  }
-}
-
-if (!poolConfig) {
+if (process.env.DATABASE_URL || process.env.POSTGRES_URL) {
   poolConfig = {
-    host: process.env.DB_HOST || "localhost",
-    port: parseInt(process.env.DB_PORT) || 3306,
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_NAME || "defaultdb",
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
+    connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
+  };
+} else {
+  poolConfig = {
+    host: process.env.DB_HOST || process.env.PGHOST || "localhost",
+    port: parseInt(process.env.DB_PORT || process.env.PGPORT) || 5432,
+    user: process.env.DB_USER || process.env.PGUSER || "postgres",
+    password: process.env.DB_PASSWORD || process.env.PGPASSWORD || "",
+    database: process.env.DB_NAME || process.env.PGDATABASE || "goalbeat_ai",
   };
 }
 
-// Enable SSL for Aiven production or when specified
-if (isProduction || process.env.DB_SSL === "true" || process.env.DATABASE_URL?.includes("ssl")) {
+// Enable SSL for cloud PostgreSQL (Render, Neon, Supabase, Aiven)
+// When connecting via Render internal network (host contains .internal or dpg-xxx), SSL is not needed
+const isInternalRender = process.env.DATABASE_URL?.includes(".internal");
+const needsSSL =
+  process.env.DB_SSL === "true" ||
+  (isProduction && !isInternalRender) ||
+  process.env.DATABASE_URL?.includes("sslmode=require");
+
+if (needsSSL) {
   poolConfig.ssl = {
     rejectUnauthorized: process.env.DB_SSL_STRICT === "true",
-    ca: process.env.DB_CA_CERT ? Buffer.from(process.env.DB_CA_CERT, "base64").toString() : undefined,
   };
 }
 
-const pool = mysql.createPool(poolConfig);
+const pool = new Pool(poolConfig);
 
-// ── Initialize DB Schema ────────────────────────────────────
+// ── Initialize PostgreSQL DB Schema ────────────────────────
 async function initializeDatabase() {
-  let conn;
+  let client;
   try {
-    conn = await pool.getConnection();
-    const targetDb = poolConfig.database || process.env.DB_NAME || "defaultdb";
-    
-    try {
-      await conn.query(`CREATE DATABASE IF NOT EXISTS \`${targetDb}\``);
-    } catch (e) {
-      // Ignored: Cloud providers like Aiven may manage database creation at dashboard level
-    }
-    
-    try {
-      await conn.query(`USE \`${targetDb}\``);
-    } catch (e) {
-      console.warn("⚠️ Could not switch database explicitly:", e.message);
-    }
+    client = await pool.connect();
 
     // Users table
-    await conn.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         username VARCHAR(50) UNIQUE NOT NULL,
         email VARCHAR(100) UNIQUE NOT NULL,
         password_hash VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
+      );
     `);
 
     // Favorite leagues
-    await conn.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS favorite_leagues (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
         league_id INT NOT NULL,
         league_name VARCHAR(100),
         league_logo VARCHAR(255),
-        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
+        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // Favorite clubs
-    await conn.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS favorite_clubs (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
         team_id INT NOT NULL,
         team_name VARCHAR(100),
         team_logo VARCHAR(255),
-        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
+        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // Match notifications
-    await conn.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS notifications (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
         fixture_id INT NOT NULL,
-        type ENUM('kickoff','goal','result','prediction') DEFAULT 'kickoff',
+        type VARCHAR(20) DEFAULT 'kickoff' CHECK (type IN ('kickoff','goal','result','prediction')),
         message TEXT,
         is_read BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // Cached predictions (avoid re-computing)
-    await conn.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS predictions_cache (
         fixture_id INT PRIMARY KEY,
-        prediction_data JSON,
+        prediction_data JSONB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
-    console.log("✅ Database initialized");
+    console.log("✅ PostgreSQL Database initialized");
   } catch (err) {
     console.error("❌ Database init error:", err.message);
     // Non-fatal — app still works without DB (uses API cache)
   } finally {
-    conn.release();
+    if (client) client.release();
   }
 }
 

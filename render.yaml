@@ -1,3 +1,10 @@
+databases:
+  - name: goalbeat-postgres
+    databaseName: goalbeat_db
+    user: goalbeat_user
+    plan: free
+    region: oregon
+
 services:
   - type: web
     name: goalbeat-ai-backend
@@ -17,23 +24,9 @@ services:
       - key: RAPIDAPI_KEY
         sync: false
       - key: DATABASE_URL
-        sync: false
-      - key: DB_HOST
-        sync: false
-      - key: DB_PORT
-        value: "3306"
-      - key: DB_USER
-        sync: false
-      - key: DB_PASSWORD
-        sync: false
-      - key: DB_NAME
-        value: defaultdb
-      - key: DB_SSL
-        value: "true"
-      - key: DB_SSL_STRICT
-        value: "false"
-      - key: DB_CA_CERT
-        sync: false
+        fromDatabase:
+          name: goalbeat-postgres
+          property: connectionString
       - key: FRONTEND_URL
         sync: false
       - key: JWT_SECRET

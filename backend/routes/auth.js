@@ -1,5 +1,5 @@
 // ============================================================
-// GoalBeat AI — Auth Routes
+// GoalBeat AI — Auth Routes (PostgreSQL)
 // ============================================================
 const express = require("express");
 const router = express.Router();
@@ -20,8 +20,8 @@ router.post("/register", async (req, res) => {
 
   try {
     // Check if user exists
-    const [existing] = await pool.execute(
-      "SELECT * FROM users WHERE email = ? OR username = ?",
+    const { rows: existing } = await pool.query(
+      "SELECT id FROM users WHERE email = $1 OR username = $2",
       [email, username]
     );
     if (existing.length > 0) {
@@ -33,12 +33,13 @@ router.post("/register", async (req, res) => {
     const password_hash = await bcrypt.hash(password, salt);
 
     // Create user
-    const [result] = await pool.execute(
-      "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+    const { rows: insertRows } = await pool.query(
+      "INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email",
       [username, email, password_hash]
     );
 
-    const userId = result.insertId;
+    const newUser = insertRows[0];
+    const userId = newUser.id;
 
     // Generate token
     const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -47,8 +48,8 @@ router.post("/register", async (req, res) => {
       token,
       user: {
         id: userId,
-        username,
-        email
+        username: newUser.username,
+        email: newUser.email
       }
     });
 
@@ -71,7 +72,7 @@ router.post("/login", async (req, res) => {
 
   try {
     // Check user
-    const [users] = await pool.execute("SELECT * FROM users WHERE email = ?", [email]);
+    const { rows: users } = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     if (users.length === 0) {
       return res.status(400).json({ error: "Invalid credentials" });
     }
@@ -116,8 +117,8 @@ router.get("/me", async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const [users] = await pool.execute(
-      "SELECT id, username, email, created_at FROM users WHERE id = ?",
+    const { rows: users } = await pool.query(
+      "SELECT id, username, email, created_at FROM users WHERE id = $1",
       [decoded.id]
     );
 
